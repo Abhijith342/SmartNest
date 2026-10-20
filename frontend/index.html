@@ -168,6 +168,34 @@
                 <p id="statusMessage" class="status-message" role="status"></p>
             </div>
         </section>
+        
+        <section class="floorplan-section">
+            <div class="floorplan-header">
+                <div>
+                    <p class="eyebrow">VISUALIZE YOUR HOME</p>
+                    <h2>Your 2D floor plan</h2>
+                    <p class="section-description">
+                        A conceptual room layout based on your selected requirements.
+                    </p>
+                </div>
+                <button type="button" id="downloadPlanButton" class="download-button">
+                    Download plan
+                </button>
+            </div>
+
+            <div class="floorplan-canvas-wrapper">
+                <canvas id="floorPlanCanvas" width="900" height="600">
+                    Your browser does not support canvas.
+                </canvas>
+            </div>
+
+            <p class="floorplan-note">
+                Conceptual visualization only. Room sizes and positions are approximate;
+                this is not a construction-ready architectural drawing.
+            </p>
+            <p id="floorplanStatus" class="status-message" role="status"></p>
+        </section>
+
 
         <footer>
             SmartNest · A smart home-planning mini-project
