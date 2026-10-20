@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartNest | Smart House Planner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a href="#" class="logo">Smart<span>Nest</span></a>
+        <span class="tagline">Plan smarter. Build better.</span>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">YOUR HOME, YOUR WAY</p>
+            <h1>Design your dream home.</h1>
+            <p>Enter your requirements to start planning your home and exploring its estimated size.</p>
+        </section>
+
+        <section class="planner">
+            <div class="form-section">
+                <h2>House requirements</h2>
+                <p class="section-description">Tell us about the home you want to build.</p>
+
+                <form id="houseForm">
+                    <div class="field">
+                        <label for="plot_length">Plot length (feet)</label>
+                        <input type="number" id="plot_length" min="1" max="1000"
+                               step="0.1" placeholder="e.g. 40" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="plot_width">Plot width (feet)</label>
+                        <input type="number" id="plot_width" min="1" max="1000"
+                               step="0.1" placeholder="e.g. 30" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="floors">Number of floors</label>
+                        <select id="floors" required>
+                            <option value="1">1 floor</option>
+                            <option value="2">2 floors</option>
+                            <option value="3">3 floors</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="bedrooms">Bedrooms</label>
+                        <input type="number" id="bedrooms" min="1" max="20"
+                               value="2" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="bathrooms">Bathrooms</label>
+                        <input type="number" id="bathrooms" min="1" max="20"
+                               value="2" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="tier">Construction quality</label>
+                        <select id="tier" required>
+                            <option value="Economy">Economy</option>
+                            <option value="Standard" selected>Standard</option>
+                            <option value="Premium">Premium</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="submitButton">
+                        Calculate Estimate
+                    </button>
+
+                    <p class="form-note">
+                        Cost estimates will be added after we connect material prices.
+                    </p>
+                </form>
+            </div>
+
+            <div class="result-section">
+                <div class="result-heading">
+                    <span class="result-icon">⌂</span>
+                    <div>
+                        <h2>Your planning summary</h2>
+                        <p>Results from your requirements</p>
+                    </div>
+                </div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="house-symbol">⌂</div>
+                    <h3>Your home starts here</h3>
+                    <p>Fill in your house requirements and calculate your first estimate.</p>
+                </div>
+
+                <div id="result" class="results" hidden>
+                    <div class="metric">
+                        <span>Plot area</span>
+                        <strong id="plotArea">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Estimated built-up area</span>
+                        <strong id="builtUpArea">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Bedrooms</span>
+                        <strong id="bedroomResult">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Bathrooms</span>
+                        <strong id="bathroomResult">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Floors</span>
+                        <strong id="floorResult">—</strong>
+                    </div>
+
+                    <div class="metric">
+                        <span>Construction quality</span>
+                        <strong id="tierResult">—</strong>
+                    </div>
+
+                    <div class="notice">
+                        <strong>Cost estimate</strong>
+                        <p id="costMessage">Material prices are not connected yet.</p>
+                    </div>
+                </div>
+
+                <p id="statusMessage" class="status-message" role="status"></p>
+            </div>
+        </section>
+
+        <footer>
+            SmartNest · A smart home-planning mini-project
+        </footer>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
