@@ -5,135 +5,258 @@ const result = document.getElementById("result");
 const emptyState = document.getElementById("emptyState");
 const statusMessage = document.getElementById("statusMessage");
 
+
+function renderRoomInputs() {
+    const container = document.getElementById("roomDimensions");
+    if (!container) return;
+
+    const bedrooms = Number(document.getElementById("bedrooms").value);
+    const bathrooms = Number(document.getElementById("bathrooms").value);
+
+    const roomList = [
+        { name: "Living room", length: 14, width: 12 },
+        { name: "Kitchen", length: 10, width: 10 },
+        { name: "Dining", length: 10, width: 8 }
+    ];
+
+    for (let i = 1; i <= bedrooms; i++) {
+        roomList.push({
+            name: `Bedroom ${i}`,
+            length: 12,
+            width: 10
+        });
+    }
+
+    for (let i = 1; i <= bathrooms; i++) {
+        roomList.push({
+            name: `Bathroom ${i}`,
+            length: 6,
+            width: 5
+        });
+    }
+
+    const previousValues = {};
+
+    container.querySelectorAll("[data-room]").forEach((input) => {
+        const key = `${input.dataset.room}-${input.dataset.dimension}`;
+        previousValues[key] = input.value;
+    });
+
+    container.replaceChildren();
+
+    const heading = document.createElement("div");
+    heading.className = "room-dimension-heading";
+    heading.innerHTML = "<span>Room</span><span>Length (ft)</span><span>Width (ft)</span>";
+    container.appendChild(heading);
+
+    roomList.forEach((room, index) => {
+        const row = document.createElement("div");
+        row.className = "room-dimension-row";
+
+        const label = document.createElement("label");
+        label.textContent = room.name;
+        label.htmlFor = `room-${index}-length`;
+        row.appendChild(label);
+
+        ["length", "width"].forEach((dimension) => {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = "1";
+            input.max = "100";
+            input.step = "0.5";
+            input.required = true;
+            input.dataset.room = room.name;
+            input.dataset.dimension = dimension;
+            input.id = `room-${index}-${dimension}`;
+            input.setAttribute("aria-label", `${room.name} ${dimension}`);
+
+            const key = `${room.name}-${dimension}`;
+            input.value = previousValues[key] ?? room[dimension];
+
+            row.appendChild(input);
+        });
+
+        container.appendChild(row);
+    });
+}
+
+renderRoomInputs();
+
+document.getElementById("bedrooms").addEventListener("change", renderRoomInputs);
+document.getElementById("bathrooms").addEventListener("change", renderRoomInputs);
+
+
+function getRoomDimensions() {
+    const inputs = document.querySelectorAll("#roomDimensions [data-room]");
+    const rooms = new Map();
+
+    inputs.forEach((input) => {
+        const name = input.dataset.room;
+        if (!rooms.has(name)) rooms.set(name, { name });
+
+        rooms.get(name)[input.dataset.dimension] = Number(input.value);
+    });
+
+    return Array.from(rooms.values());
+}
+
 function drawFloorPlan(data) {
     const canvas = document.getElementById("floorPlanCanvas");
     const ctx = canvas.getContext("2d");
     const status = document.getElementById("floorplanStatus");
 
-    const length = Number(data.plot_length ?? document.getElementById("plot_length").value);
-    const width = Number(data.plot_width ?? document.getElementById("plot_width").value);
+    const plotLength = Number(data.plot_length);
+    const plotWidth = Number(data.plot_width);
+    const rooms = data.rooms || [];
 
-    if (!(length > 0 && width > 0)) {
-        status.textContent = "Enter valid plot dimensions to draw a plan.";
+    if (!(plotLength > 0 && plotWidth > 0) || rooms.length === 0) {
+        status.textContent = "Enter valid plot and room dimensions.";
         return;
     }
 
-    const rooms = [
-        "Living room",
-        "Kitchen",
-        "Dining"
-    ];
-
-    for (let i = 1; i <= data.bedrooms; i++) {
-        rooms.push(`Bedroom ${i}`);
+    if (rooms.some((room) =>
+        !Number.isFinite(room.length) ||
+        !Number.isFinite(room.width) ||
+        room.length <= 0 ||
+        room.width <= 0
+    )) {
+        status.textContent = "All room dimensions must be positive numbers.";
+        return;
     }
 
-    for (let i = 1; i <= data.bathrooms; i++) {
-        rooms.push(`Bathroom ${i}`);
+    // Pack rooms into rows inside the plot.
+    const placedRooms = [];
+    let x = 0;
+    let y = 0;
+    let rowHeight = 0;
+    let exceedsPlot = false;
+
+    rooms.forEach((room) => {
+        if (x > 0 && x + room.length > plotLength) {
+            x = 0;
+            y += rowHeight;
+            rowHeight = 0;
+        }
+
+        if (room.length > plotLength || room.width > plotWidth) {
+            exceedsPlot = true;
+        }
+
+        placedRooms.push({
+            ...room,
+            x,
+            y
+        });
+
+        x += room.length;
+        rowHeight = Math.max(rowHeight, room.width);
+    });
+
+    const totalLayoutHeight = y + rowHeight;
+
+    if (totalLayoutHeight > plotWidth) {
+        exceedsPlot = true;
     }
 
-    // Reset the canvas before drawing a new plan.
+    // Prepare canvas and scale the plot to fit.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#f8faf8";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const padding = 75;
-    const availableWidth = canvas.width - padding * 2;
-    const availableHeight = canvas.height - padding * 2;
-
-    // Fit the plot proportions inside the canvas.
     const scale = Math.min(
-        availableWidth / length,
-        availableHeight / width
+        (canvas.width - padding * 2) / plotLength,
+        (canvas.height - padding * 2) / plotWidth
     );
 
-    const plotWidth = length * scale;
-    const plotHeight = width * scale;
-    const startX = (canvas.width - plotWidth) / 2;
-    const startY = (canvas.height - plotHeight) / 2;
+    const plotPixelWidth = plotLength * scale;
+    const plotPixelHeight = plotWidth * scale;
+    const startX = (canvas.width - plotPixelWidth) / 2;
+    const startY = (canvas.height - plotPixelHeight) / 2;
 
-    // Draw plot outline.
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(startX, startY, plotWidth, plotHeight);
+    ctx.fillRect(startX, startY, plotPixelWidth, plotPixelHeight);
+
     ctx.strokeStyle = "#176b50";
     ctx.lineWidth = 4;
-    ctx.strokeRect(startX, startY, plotWidth, plotHeight);
+    ctx.strokeRect(startX, startY, plotPixelWidth, plotPixelHeight);
 
-    // Arrange the rooms in a simple grid.
-    const columns = Math.ceil(Math.sqrt(rooms.length * length / width));
-    const rows = Math.ceil(rooms.length / columns);
-    const cellWidth = plotWidth / columns;
-    const cellHeight = plotHeight / rows;
+    // Clip room drawings to the plot boundary.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(startX, startY, plotPixelWidth, plotPixelHeight);
+    ctx.clip();
 
-    rooms.forEach((room, index) => {
-        const column = index % columns;
-        const row = Math.floor(index / columns);
-        const x = startX + column * cellWidth;
-        const y = startY + row * cellHeight;
+    placedRooms.forEach((room, index) => {
+        const rx = startX + room.x * scale;
+        const ry = startY + room.y * scale;
+        const rw = room.length * scale;
+        const rh = room.width * scale;
 
         ctx.fillStyle = index % 2 === 0 ? "#e8f4ec" : "#edf3f7";
-        ctx.fillRect(x, y, cellWidth, cellHeight);
+        ctx.fillRect(rx, ry, rw, rh);
 
         ctx.strokeStyle = "#6b8f7a";
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, cellWidth, cellHeight);
+        ctx.strokeRect(rx, ry, rw, rh);
 
-        const roomLength = length / columns;
-        const roomWidth = width / rows;
+        if (rw >= 45 && rh >= 35) {
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#202b26";
 
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = "#202b26";
-        ctx.font = "bold 14px Arial";
-
-        // Fit long room names into smaller boxes.
-        const label = room;
-        const maxTextWidth = Math.max(40, cellWidth - 12);
-        let fontSize = 14;
-
-        while (fontSize > 9) {
+            let fontSize = 13;
             ctx.font = `bold ${fontSize}px Arial`;
-            if (ctx.measureText(label).width <= maxTextWidth) break;
-            fontSize--;
+
+            while (
+                fontSize > 8 &&
+                ctx.measureText(room.name).width > rw - 8
+            ) {
+                fontSize--;
+                ctx.font = `bold ${fontSize}px Arial`;
+            }
+
+            ctx.fillText(
+                room.name,
+                rx + rw / 2,
+                ry + rh / 2 - 7,
+                Math.max(10, rw - 8)
+            );
+
+            ctx.font = "10px Arial";
+            ctx.fillStyle = "#52645a";
+            ctx.fillText(
+                `${room.length} × ${room.width} ft`,
+                rx + rw / 2,
+                ry + rh / 2 + 10,
+                Math.max(10, rw - 8)
+            );
         }
-
-        ctx.fillText(
-            label,
-            x + cellWidth / 2,
-            y + cellHeight / 2 - 7,
-            maxTextWidth
-        );
-
-        ctx.font = "11px Arial";
-        ctx.fillStyle = "#52645a";
-        ctx.fillText(
-            `${roomLength.toFixed(1)} × ${roomWidth.toFixed(1)} ft`,
-            x + cellWidth / 2,
-            y + cellHeight / 2 + 12,
-            maxTextWidth
-        );
     });
 
-    // Add plot dimensions.
+    ctx.restore();
+
+    // Plot dimension labels.
     ctx.fillStyle = "#176b50";
     ctx.font = "bold 15px Arial";
     ctx.textAlign = "center";
     ctx.fillText(
-        `${length} ft`,
-        startX + plotWidth / 2,
+        `${plotLength} ft`,
+        startX + plotPixelWidth / 2,
         startY - 22
     );
 
     ctx.save();
-    ctx.translate(startX - 28, startY + plotHeight / 2);
+    ctx.translate(startX - 28, startY + plotPixelHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText(`${width} ft`, 0, 0);
+    ctx.fillText(`${plotWidth} ft`, 0, 0);
     ctx.restore();
 
-    status.textContent =
-        "Conceptual layout generated. Room dimensions are approximate " +
-        "and do not account for walls, setbacks, circulation, or structural requirements.";
+    status.textContent = exceedsPlot
+        ? "Warning: the selected room dimensions exceed the available plot layout. Reduce room sizes or revise the plot dimensions. This is a rough packing check, not a building-code validation."
+        : "Rooms are drawn to relative dimensions. This conceptual arrangement does not yet account for walls, gaps, circulation, setbacks, or building regulations.";
 }
+
 
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -247,11 +370,15 @@ form.addEventListener("submit", async (event) => {
 
         emptyState.hidden = true;
         result.hidden = false;
+
+        console.log("Rooms sent to floor plan:", getRoomDimensions());
+        
         drawFloorPlan({
-            ...data,
             plot_length: houseData.plot_length,
-            plot_width: houseData.plot_width
+            plot_width: houseData.plot_width,
+            rooms: getRoomDimensions()
         });
+
 
     } catch (error) {
         statusMessage.textContent =

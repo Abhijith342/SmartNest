@@ -436,3 +436,59 @@ footer {
         flex-direction: column;
     }
 }
+
+.room-settings {
+    grid-column: 1 / -1;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #f8faf8;
+}
+
+.room-settings h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+#roomDimensions {
+    display: grid;
+    gap: 12px;
+}
+
+.room-dimension-row {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) 1fr 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-dimension-row label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.room-dimension-row input {
+    width: 100%;
+    min-width: 0;
+}
+
+.room-dimension-heading {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) 1fr 1fr;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+@media (max-width: 480px) {
+    .room-dimension-row,
+    .room-dimension-heading {
+        grid-template-columns: minmax(85px, 1fr) 1fr 1fr;
+        gap: 6px;
+    }
+
+    .room-dimension-row label {
+        font-size: 12px;
+    }
+}
+
