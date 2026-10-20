@@ -2,8 +2,10 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from services.cost_estimator import estimate_construction_cost
+
 app = Flask(__name__)
-CORS(app)  # Development setup; restrict origins before deployment.
+CORS(app)  # Development only; restrict allowed origins for deployment.
 
 
 @app.get("/api/health")
@@ -42,12 +44,17 @@ def estimate():
             raise ValueError("Invalid construction tier")
 
     except (KeyError, TypeError, ValueError):
-        return jsonify({"error": "Please provide valid house requirements"}), 400
+        return jsonify({
+            "error": "Please provide valid house requirements"
+        }), 400
 
     plot_area = length * width
 
-    # Temporary prototype assumption, not a validated house layout.
+    # Temporary assumption: 60% plot coverage on each floor.
+    # This does not account for setbacks or an actual floor-plan layout.
     built_up_area = plot_area * 0.60 * floors
+
+    cost = estimate_construction_cost(built_up_area, tier)
 
     return jsonify({
         "plot_area_sqft": round(plot_area, 2),
@@ -56,8 +63,7 @@ def estimate():
         "bathrooms": bathrooms,
         "floors": floors,
         "tier": tier,
-        "estimated_cost": None,
-        "message": "Material quantities and market prices are not connected yet."
+        "cost_estimate": cost,
     })
 
 

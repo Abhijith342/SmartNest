@@ -124,10 +124,45 @@
                         <strong id="tierResult">—</strong>
                     </div>
 
+                    
                     <div class="notice">
-                        <strong>Cost estimate</strong>
-                        <p id="costMessage">Material prices are not connected yet.</p>
+                        <strong>Estimated construction cost</strong>
+                        <p id="costMessage">Your estimate will appear here.</p>
                     </div>
+
+                    <div class="cost-summary">
+                        <div>
+                            <span>Subtotal</span>
+                            <strong id="costSubtotal">—</strong>
+                        </div>
+                        <div>
+                            <span>10% contingency</span>
+                            <strong id="costContingency">—</strong>
+                        </div>
+                        <div class="grand-total">
+                            <span>Estimated total</span>
+                            <strong id="costTotal">—</strong>
+                        </div>
+                    </div>
+
+                    <h3 class="breakdown-title">Cost breakdown</h3>
+
+                    <div class="table-wrapper">
+                        <table class="cost-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Rate</th>
+                                    <th>Estimated cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="costBreakdown"></tbody>
+                        </table>
+                    </div>
+
+                    <p class="disclaimer" id="costDisclaimer"></p>
+
                 </div>
 
                 <p id="statusMessage" class="status-message" role="status"></p>

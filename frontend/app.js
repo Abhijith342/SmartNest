@@ -61,7 +61,51 @@ form.addEventListener("submit", async (event) => {
             data.tier;
 
         document.getElementById("costMessage").textContent =
-            data.message || "Cost data is not available yet.";
+            `Illustrative ${data.cost_estimate.tier} construction estimate in Indian rupees.`;
+
+        const cost = data.cost_estimate;
+
+        const formatINR = (amount) =>
+            new Intl.NumberFormat("en-IN", {
+                style: "currency",
+                currency: "INR",
+                maximumFractionDigits: 0
+            }).format(amount);
+
+        document.getElementById("costSubtotal").textContent =
+            formatINR(cost.estimated_subtotal_inr);
+
+        document.getElementById("costContingency").textContent =
+            formatINR(cost.contingency_inr);
+
+        document.getElementById("costTotal").textContent =
+            formatINR(cost.estimated_total_inr);
+
+        document.getElementById("costDisclaimer").textContent =
+            cost.disclaimer;
+
+        const breakdownBody = document.getElementById("costBreakdown");
+        breakdownBody.replaceChildren();
+
+        cost.breakdown.forEach((item) => {
+            const row = document.createElement("tr");
+
+            const values = [
+                item.name,
+                `${item.quantity.toLocaleString("en-IN")} ${item.unit}`,
+                formatINR(item.unit_rate_inr),
+                formatINR(item.estimated_cost_inr)
+            ];
+
+            values.forEach((value) => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+
+            breakdownBody.appendChild(row);
+        });
+
 
         emptyState.hidden = true;
         result.hidden = false;
