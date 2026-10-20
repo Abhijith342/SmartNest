@@ -1,86 +1,36 @@
 
-# backend/services/cost_estimator.py
+import json
+from pathlib import Path
 
-# DEMONSTRATION RATES ONLY — replace with verified local supplier prices.
-# Quantities are rough planning assumptions, not engineering calculations.
+DATA_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "data"
+    / "material_rates.json"
+)
 
-TIER_MULTIPLIERS = {
-    "Economy": 0.85,
-    "Standard": 1.00,
-    "Premium": 1.35,
-}
 
-MATERIALS = [
-    {
-        "name": "Cement",
-        "unit": "bag",
-        "quantity_per_sqft": 0.40,
-        "rate": 400,
-        "category": "Materials",
-    },
-    {
-        "name": "Steel",
-        "unit": "kg",
-        "quantity_per_sqft": 4.00,
-        "rate": 65,
-        "category": "Materials",
-    },
-    {
-        "name": "Bricks",
-        "unit": "piece",
-        "quantity_per_sqft": 8.00,
-        "rate": 10,
-        "category": "Materials",
-    },
-    {
-        "name": "Sand",
-        "unit": "cu ft",
-        "quantity_per_sqft": 1.20,
-        "rate": 55,
-        "category": "Materials",
-    },
-    {
-        "name": "Aggregate",
-        "unit": "cu ft",
-        "quantity_per_sqft": 0.80,
-        "rate": 45,
-        "category": "Materials",
-    },
-    {
-        "name": "Labour",
-        "unit": "sq ft",
-        "quantity_per_sqft": 1.00,
-        "rate": 300,
-        "category": "Labour",
-    },
-    {
-        "name": "Flooring and finishes",
-        "unit": "sq ft",
-        "quantity_per_sqft": 1.00,
-        "rate": 150,
-        "category": "Finishing",
-    },
-    {
-        "name": "Electrical and plumbing",
-        "unit": "sq ft",
-        "quantity_per_sqft": 1.00,
-        "rate": 120,
-        "category": "Services",
-    },
-]
+def load_price_data():
+    with DATA_FILE.open("r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def estimate_construction_cost(built_up_area, tier):
-    """Return a rough, illustrative construction-cost breakdown."""
+    """Produce a simplified prototype estimate from editable rate data."""
 
-    if tier not in TIER_MULTIPLIERS:
+    if not isinstance(built_up_area, (int, float)) or built_up_area <= 0:
+        raise ValueError("Built-up area must be positive")
+
+    price_data = load_price_data()
+    tier_multipliers = price_data["tier_multipliers"]
+
+    if tier not in tier_multipliers:
         raise ValueError("Invalid construction tier")
 
-    multiplier = TIER_MULTIPLIERS[tier]
+    multiplier = tier_multipliers[tier]
     breakdown = []
-    total = 0
+    subtotal = 0
 
-    for item in MATERIALS:
+    for item in price_data["materials"]:
         quantity = built_up_area * item["quantity_per_sqft"]
         unit_rate = item["rate"] * multiplier
         amount = quantity * unit_rate
@@ -91,26 +41,28 @@ def estimate_construction_cost(built_up_area, tier):
             "quantity": round(quantity, 2),
             "unit": item["unit"],
             "unit_rate_inr": round(unit_rate, 2),
-            "estimated_cost_inr": round(amount),
+            "estimated_cost_inr": round(amount)
         })
 
-        total += amount
+        subtotal += amount
 
-    # A planning contingency, not a substitute for a professional estimate.
-    contingency = total * 0.10
-    grand_total = total + contingency
+    contingency_rate = price_data["contingency_rate_percent"]
+    contingency = subtotal * contingency_rate / 100
 
     return {
-        "currency": "INR",
+        "currency": price_data["currency"],
+        "location": price_data["location"],
+        "price_status": price_data["price_status"],
+        "last_updated": price_data["last_updated"],
         "tier": tier,
-        "estimated_subtotal_inr": round(total),
-        "contingency_rate_percent": 10,
+        "estimated_subtotal_inr": round(subtotal),
+        "contingency_rate_percent": contingency_rate,
         "contingency_inr": round(contingency),
-        "estimated_total_inr": round(grand_total),
+        "estimated_total_inr": round(subtotal + contingency),
         "breakdown": breakdown,
         "disclaimer": (
-            "Illustrative prototype estimate only. Rates and quantities "
-            "must be verified locally before making construction decisions."
-        ),
+            "Illustrative prototype estimate only. Prices and quantities "
+            "are not verified market data or an engineering bill of quantities. "
+            "Obtain current local rates and professional estimates before building."
+        )
     }
-

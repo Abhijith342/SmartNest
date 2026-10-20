@@ -1,0 +1,71 @@
+
+{
+  "currency": "INR",
+  "location": "Demo location - replace with your target city",
+  "last_updated": "2026-10-20",
+  "price_status": "illustrative_demo_data",
+  "tier_multipliers": {
+    "Economy": 0.85,
+    "Standard": 1.0,
+    "Premium": 1.35
+  },
+  "contingency_rate_percent": 10,
+  "materials": [
+    {
+      "name": "Cement",
+      "unit": "bag",
+      "quantity_per_sqft": 0.4,
+      "rate": 400,
+      "category": "Materials"
+    },
+    {
+      "name": "Steel",
+      "unit": "kg",
+      "quantity_per_sqft": 4,
+      "rate": 65,
+      "category": "Materials"
+    },
+    {
+      "name": "Bricks",
+      "unit": "piece",
+      "quantity_per_sqft": 8,
+      "rate": 10,
+      "category": "Materials"
+    },
+    {
+      "name": "Sand",
+      "unit": "cu ft",
+      "quantity_per_sqft": 1.2,
+      "rate": 55,
+      "category": "Materials"
+    },
+    {
+      "name": "Aggregate",
+      "unit": "cu ft",
+      "quantity_per_sqft": 0.8,
+      "rate": 45,
+      "category": "Materials"
+    },
+    {
+      "name": "Labour",
+      "unit": "sq ft",
+      "quantity_per_sqft": 1,
+      "rate": 300,
+      "category": "Labour"
+    },
+    {
+      "name": "Flooring and finishes",
+      "unit": "sq ft",
+      "quantity_per_sqft": 1,
+      "rate": 150,
+      "category": "Finishing"
+    },
+    {
+      "name": "Electrical and plumbing",
+      "unit": "sq ft",
+      "quantity_per_sqft": 1,
+      "rate": 120,
+      "category": "Services"
+    }
+  ]
+}

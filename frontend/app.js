@@ -42,6 +42,12 @@ form.addEventListener("submit", async (event) => {
             );
         }
 
+        const cost = data.cost_estimate;
+
+        if (!cost) {
+            throw new Error("Cost estimate is missing from the backend response.");
+        }
+
         document.getElementById("plotArea").textContent =
             `${data.plot_area_sqft.toLocaleString()} sq ft`;
 
@@ -60,10 +66,12 @@ form.addEventListener("submit", async (event) => {
         document.getElementById("tierResult").textContent =
             data.tier;
 
-        document.getElementById("costMessage").textContent =
-            `Illustrative ${data.cost_estimate.tier} construction estimate in Indian rupees.`;
+        const priceInfo = data.cost_estimate;
 
-        const cost = data.cost_estimate;
+        document.getElementById("costMessage").textContent =
+            `${priceInfo.tier} tier · ${priceInfo.location} · ` +
+            `Rate data date: ${priceInfo.last_updated} · ` +
+            `Status: ${priceInfo.price_status.replaceAll("_", " ")}.`;
 
         const formatINR = (amount) =>
             new Intl.NumberFormat("en-IN", {
