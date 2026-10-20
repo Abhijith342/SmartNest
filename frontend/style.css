@@ -491,4 +491,98 @@ footer {
         font-size: 12px;
     }
 }
+/* SmartNest 3D House Preview */
 
+.house3d-section {
+    margin-top: 32px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #dce6df;
+    border-radius: 16px;
+}
+
+.house3d-heading h2 {
+    margin: 0 0 8px;
+    color: #176b50;
+}
+
+.house3d-heading p {
+    margin: 0 0 20px;
+    color: #64748b;
+}
+
+.house3d-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.view-button {
+    padding: 10px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #26352d;
+    cursor: pointer;
+    font: inherit;
+}
+
+.view-button:hover {
+    background: #edf7f0;
+}
+
+.view-button.active {
+    background: #176b50;
+    border-color: #176b50;
+    color: #ffffff;
+}
+
+.house3d-container {
+    position: relative;
+    width: 100%;
+    height: 520px;
+    overflow: hidden;
+    border: 1px solid #dce6df;
+    border-radius: 12px;
+    background: linear-gradient(#edf5f7, #f8fafc);
+}
+
+.house3d-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#house3dStatus {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #52645a;
+    text-align: center;
+    pointer-events: none;
+}
+
+.house3d-help {
+    margin: 12px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    .house3d-section {
+        padding: 14px;
+    }
+
+    .house3d-container {
+        height: 380px;
+    }
+
+    .view-button {
+        padding: 9px 11px;
+        font-size: 13px;
+    }
+}

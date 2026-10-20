@@ -661,11 +661,24 @@ form.addEventListener("submit", async (event) => {
         emptyState.hidden = true;
         result.hidden = false;
 
+        // Keep the existing 2D floor plan.
         drawFloorPlan({
             plot_length: houseData.plot_length,
             plot_width: houseData.plot_width,
             rooms: rooms
         });
+
+        // Send the same data to the 3D house preview.
+        window.dispatchEvent(
+            new CustomEvent("smartnest:house-data", {
+                detail: {
+                    plot_length: houseData.plot_length,
+                    plot_width: houseData.plot_width,
+                    floors: houseData.floors,
+                    rooms: rooms
+                }
+            })
+        );
 
     } catch (error) {
         console.error("SmartNest error:", error);

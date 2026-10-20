@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartNest | Smart House Planner</title>
     <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+        }
+    }
+    </script>
 </head>
 <body>
     <header class="navbar">
@@ -75,7 +82,7 @@
                         </p>
                         <div id="roomDimensions"></div>
                     </div>
-                    
+
                     <button type="submit" id="submitButton">
                         Calculate Estimate
                     </button>
@@ -203,6 +210,39 @@
             </p>
             <p id="floorplanStatus" class="status-message" role="status"></p>
         </section>
+        <section id="house3dSection" class="house3d-section">
+            <div class="house3d-heading">
+                <div>
+                    <h2>3D House Preview</h2>
+                    <p>Explore your SmartNest design in three dimensions.</p>
+                </div>
+            </div>
+
+            <div class="house3d-controls">
+                <button type="button" id="viewCutaway" class="view-button active">
+                    Interior Cutaway
+                </button>
+
+                <button type="button" id="viewExterior" class="view-button">
+                    Exterior View
+                </button>
+
+                <button type="button" id="reset3DView" class="view-button">
+                    Reset View
+                </button>
+            </div>
+
+            <div id="house3dContainer" class="house3d-container">
+                <p id="house3dStatus">
+                    Calculate your estimate to generate the 3D house model.
+                </p>
+            </div>
+
+            <p class="house3d-help">
+                Drag to rotate. Scroll to zoom. Right-click and drag to pan.
+                This is a conceptual visualization, not a construction-ready design.
+            </p>
+        </section>
 
 
         <footer>
@@ -211,5 +251,6 @@
     </main>
 
     <script src="app.js"></script>
+    <script type="module" src="house3d.js"></script>
 </body>
 </html>
