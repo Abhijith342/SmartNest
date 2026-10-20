@@ -5,13 +5,20 @@ const result = document.getElementById("result");
 const emptyState = document.getElementById("emptyState");
 const statusMessage = document.getElementById("statusMessage");
 
+// --------------------------------------------------
+// 1. Generate room dimension and feature inputs
+// --------------------------------------------------
 
 function renderRoomInputs() {
     const container = document.getElementById("roomDimensions");
     if (!container) return;
 
-    const bedrooms = Number(document.getElementById("bedrooms").value);
-    const bathrooms = Number(document.getElementById("bathrooms").value);
+    const bedrooms = Number(
+        document.getElementById("bedrooms").value
+    );
+    const bathrooms = Number(
+        document.getElementById("bathrooms").value
+    );
 
     const roomList = [
         { name: "Living room", length: 14, width: 12 },
@@ -35,21 +42,36 @@ function renderRoomInputs() {
         });
     }
 
+    // Preserve previously entered dimensions and selections.
     const previousValues = {};
 
-    container.querySelectorAll("[data-room]").forEach((input) => {
-        const key = `${input.dataset.room}-${input.dataset.dimension}`;
-        previousValues[key] = input.value;
-    });
+    container
+        .querySelectorAll("[data-room][data-dimension]")
+        .forEach((input) => {
+            const key =
+                `${input.dataset.room}-${input.dataset.dimension}`;
+            previousValues[key] = input.value;
+        });
+
+    container
+        .querySelectorAll("[data-feature-room][data-feature]")
+        .forEach((input) => {
+            const key =
+                `${input.dataset.featureRoom}-${input.dataset.feature}`;
+            previousValues[key] = input.value;
+        });
 
     container.replaceChildren();
 
     const heading = document.createElement("div");
     heading.className = "room-dimension-heading";
-    heading.innerHTML = "<span>Room</span><span>Length (ft)</span><span>Width (ft)</span>";
+    heading.innerHTML =
+        "<span>Room</span><span>Length (ft)</span><span>Width (ft)</span>";
+
     container.appendChild(heading);
 
     roomList.forEach((room, index) => {
+        // Room name and dimensions.
         const row = document.createElement("div");
         row.className = "room-dimension-row";
 
@@ -60,15 +82,21 @@ function renderRoomInputs() {
 
         ["length", "width"].forEach((dimension) => {
             const input = document.createElement("input");
+
             input.type = "number";
             input.min = "1";
             input.max = "100";
             input.step = "0.5";
             input.required = true;
+
             input.dataset.room = room.name;
             input.dataset.dimension = dimension;
             input.id = `room-${index}-${dimension}`;
-            input.setAttribute("aria-label", `${room.name} ${dimension}`);
+
+            input.setAttribute(
+                "aria-label",
+                `${room.name} ${dimension}`
+            );
 
             const key = `${room.name}-${dimension}`;
             input.value = previousValues[key] ?? room[dimension];
@@ -77,54 +105,156 @@ function renderRoomInputs() {
         });
 
         container.appendChild(row);
+
+        // Door and window selections.
+        const featureRow = document.createElement("div");
+        featureRow.className = "room-feature-row";
+        featureRow.style.display = "flex";
+        featureRow.style.flexWrap = "wrap";
+        featureRow.style.alignItems = "center";
+        featureRow.style.gap = "12px";
+        featureRow.style.padding = "4px 8px 12px";
+        featureRow.style.borderBottom = "1px solid #e5e7eb";
+
+        [
+            { feature: "door", label: "Door" },
+            { feature: "window", label: "Window" }
+        ].forEach(({ feature, label: featureLabel }) => {
+            const featureLabelElement =
+                document.createElement("label");
+
+            featureLabelElement.textContent = `${featureLabel}:`;
+            featureLabelElement.style.display = "flex";
+            featureLabelElement.style.alignItems = "center";
+            featureLabelElement.style.gap = "6px";
+
+            const select = document.createElement("select");
+
+            select.dataset.featureRoom = room.name;
+            select.dataset.feature = feature;
+
+            select.setAttribute(
+                "aria-label",
+                `${room.name} ${featureLabel}`
+            );
+
+            [
+                { value: "yes", text: "Yes" },
+                { value: "no", text: "No" }
+            ].forEach(({ value, text }) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = text;
+                select.appendChild(option);
+            });
+
+            const key = `${room.name}-${feature}`;
+            select.value = previousValues[key] ?? "yes";
+
+            featureLabelElement.appendChild(select);
+            featureRow.appendChild(featureLabelElement);
+        });
+
+        container.appendChild(featureRow);
     });
 }
 
-renderRoomInputs();
-
-document.getElementById("bedrooms").addEventListener("change", renderRoomInputs);
-document.getElementById("bathrooms").addEventListener("change", renderRoomInputs);
-
+// --------------------------------------------------
+// 2. Collect room dimensions and feature selections
+// --------------------------------------------------
 
 function getRoomDimensions() {
-    const inputs = document.querySelectorAll("#roomDimensions [data-room]");
+    const inputs = document.querySelectorAll(
+        "#roomDimensions [data-room][data-dimension]"
+    );
+
     const rooms = new Map();
 
     inputs.forEach((input) => {
         const name = input.dataset.room;
-        if (!rooms.has(name)) rooms.set(name, { name });
 
-        rooms.get(name)[input.dataset.dimension] = Number(input.value);
+        if (!rooms.has(name)) {
+            rooms.set(name, {
+                name,
+                door: false,
+                window: false
+            });
+        }
+
+        rooms.get(name)[input.dataset.dimension] =
+            Number(input.value);
+    });
+
+    const featureInputs = document.querySelectorAll(
+        "#roomDimensions [data-feature-room][data-feature]"
+    );
+
+    featureInputs.forEach((input) => {
+        const name = input.dataset.featureRoom;
+        const feature = input.dataset.feature;
+
+        if (!rooms.has(name)) return;
+
+        // Dropdown values are lowercase: "yes" or "no".
+        rooms.get(name)[feature] = input.value === "yes";
     });
 
     return Array.from(rooms.values());
 }
 
+// Generate initial room inputs.
+renderRoomInputs();
+
+document
+    .getElementById("bedrooms")
+    .addEventListener("change", renderRoomInputs);
+
+document
+    .getElementById("bathrooms")
+    .addEventListener("change", renderRoomInputs);
+
+// --------------------------------------------------
+// 3. Draw the conceptual floor plan
+// --------------------------------------------------
+
 function drawFloorPlan(data) {
     const canvas = document.getElementById("floorPlanCanvas");
-    const ctx = canvas.getContext("2d");
     const status = document.getElementById("floorplanStatus");
+
+    if (!canvas || !status) {
+        console.error("Floor plan canvas or status element is missing.");
+        return;
+    }
+
+    const ctx = canvas.getContext("2d");
 
     const plotLength = Number(data.plot_length);
     const plotWidth = Number(data.plot_width);
     const rooms = data.rooms || [];
 
-    if (!(plotLength > 0 && plotWidth > 0) || rooms.length === 0) {
-        status.textContent = "Enter valid plot and room dimensions.";
+    if (
+        !(plotLength > 0 && plotWidth > 0) ||
+        rooms.length === 0
+    ) {
+        status.textContent =
+            "Enter valid plot and room dimensions.";
         return;
     }
 
-    if (rooms.some((room) =>
-        !Number.isFinite(room.length) ||
-        !Number.isFinite(room.width) ||
-        room.length <= 0 ||
-        room.width <= 0
-    )) {
-        status.textContent = "All room dimensions must be positive numbers.";
+    if (
+        rooms.some((room) =>
+            !Number.isFinite(room.length) ||
+            !Number.isFinite(room.width) ||
+            room.length <= 0 ||
+            room.width <= 0
+        )
+    ) {
+        status.textContent =
+            "All room dimensions must be positive numbers.";
         return;
     }
 
-    // Pack rooms into rows inside the plot.
+    // Arrange rooms in rows within the plot.
     const placedRooms = [];
     let x = 0;
     let y = 0;
@@ -138,7 +268,10 @@ function drawFloorPlan(data) {
             rowHeight = 0;
         }
 
-        if (room.length > plotLength || room.width > plotWidth) {
+        if (
+            room.length > plotLength ||
+            room.width > plotWidth
+        ) {
             exceedsPlot = true;
         }
 
@@ -152,18 +285,17 @@ function drawFloorPlan(data) {
         rowHeight = Math.max(rowHeight, room.width);
     });
 
-    const totalLayoutHeight = y + rowHeight;
-
-    if (totalLayoutHeight > plotWidth) {
+    if (y + rowHeight > plotWidth) {
         exceedsPlot = true;
     }
 
-    // Prepare canvas and scale the plot to fit.
+    // Prepare canvas.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#f8faf8";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const padding = 75;
+
     const scale = Math.min(
         (canvas.width - padding * 2) / plotLength,
         (canvas.height - padding * 2) / plotWidth
@@ -171,20 +303,37 @@ function drawFloorPlan(data) {
 
     const plotPixelWidth = plotLength * scale;
     const plotPixelHeight = plotWidth * scale;
+
     const startX = (canvas.width - plotPixelWidth) / 2;
     const startY = (canvas.height - plotPixelHeight) / 2;
 
+    // Plot background and boundary.
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(startX, startY, plotPixelWidth, plotPixelHeight);
+    ctx.fillRect(
+        startX,
+        startY,
+        plotPixelWidth,
+        plotPixelHeight
+    );
 
     ctx.strokeStyle = "#176b50";
     ctx.lineWidth = 4;
-    ctx.strokeRect(startX, startY, plotPixelWidth, plotPixelHeight);
+    ctx.strokeRect(
+        startX,
+        startY,
+        plotPixelWidth,
+        plotPixelHeight
+    );
 
-    // Clip room drawings to the plot boundary.
+    // Clip all room drawings to the plot.
     ctx.save();
     ctx.beginPath();
-    ctx.rect(startX, startY, plotPixelWidth, plotPixelHeight);
+    ctx.rect(
+        startX,
+        startY,
+        plotPixelWidth,
+        plotPixelHeight
+    );
     ctx.clip();
 
     placedRooms.forEach((room, index) => {
@@ -193,13 +342,97 @@ function drawFloorPlan(data) {
         const rw = room.length * scale;
         const rh = room.width * scale;
 
-        ctx.fillStyle = index % 2 === 0 ? "#e8f4ec" : "#edf3f7";
+        // Room background.
+        ctx.fillStyle =
+            index % 2 === 0 ? "#e8f4ec" : "#edf3f7";
+
         ctx.fillRect(rx, ry, rw, rh);
 
+        // Room walls.
         ctx.strokeStyle = "#6b8f7a";
         ctx.lineWidth = 2;
         ctx.strokeRect(rx, ry, rw, rh);
 
+        // Door marker on the bottom wall.
+        if (room.door === true && rw > 12 && rh > 12) {
+            const doorWidth = Math.min(26, rw * 0.3);
+            const doorX = rx + rw * 0.65;
+            const doorY = ry + rh;
+
+            // Erase part of the wall.
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(doorX, doorY);
+            ctx.lineTo(doorX + doorWidth, doorY);
+            ctx.stroke();
+
+            // Draw door leaf.
+            ctx.strokeStyle = "#8b5a2b";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(doorX, doorY);
+            ctx.lineTo(doorX, doorY - doorWidth);
+            ctx.stroke();
+
+            // Draw opening arc.
+            ctx.beginPath();
+            ctx.arc(
+                doorX,
+                doorY,
+                doorWidth,
+                -Math.PI / 2,
+                0,
+                false
+            );
+            ctx.stroke();
+        }
+
+        // Window marker on the top wall.
+        if (room.window === true && rw > 12 && rh > 12) {
+            const windowWidth = Math.min(32, rw * 0.35);
+            const windowX = rx + rw * 0.25;
+            const windowY = ry;
+
+            // Erase part of the wall.
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(windowX, windowY);
+            ctx.lineTo(windowX + windowWidth, windowY);
+            ctx.stroke();
+
+            // Blue double-line window frame.
+            ctx.strokeStyle = "#168aad";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(windowX, windowY - 1);
+            ctx.lineTo(
+                windowX + windowWidth,
+                windowY - 1
+            );
+
+            ctx.moveTo(windowX, windowY + 4);
+            ctx.lineTo(
+                windowX + windowWidth,
+                windowY + 4
+            );
+            ctx.stroke();
+
+            // Window divider.
+            ctx.beginPath();
+            ctx.moveTo(
+                windowX + windowWidth / 2,
+                windowY - 3
+            );
+            ctx.lineTo(
+                windowX + windowWidth / 2,
+                windowY + 6
+            );
+            ctx.stroke();
+        }
+
+        // Room labels and dimensions.
         if (rw >= 45 && rh >= 35) {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -225,6 +458,7 @@ function drawFloorPlan(data) {
 
             ctx.font = "10px Arial";
             ctx.fillStyle = "#52645a";
+
             ctx.fillText(
                 `${room.length} × ${room.width} ft`,
                 rx + rw / 2,
@@ -236,27 +470,64 @@ function drawFloorPlan(data) {
 
     ctx.restore();
 
-    // Plot dimension labels.
+    // Plot length label.
     ctx.fillStyle = "#176b50";
     ctx.font = "bold 15px Arial";
     ctx.textAlign = "center";
+
     ctx.fillText(
         `${plotLength} ft`,
         startX + plotPixelWidth / 2,
         startY - 22
     );
 
+    // Plot width label.
     ctx.save();
-    ctx.translate(startX - 28, startY + plotPixelHeight / 2);
+    ctx.translate(
+        startX - 28,
+        startY + plotPixelHeight / 2
+    );
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(`${plotWidth} ft`, 0, 0);
     ctx.restore();
 
+    // Legend.
+    const legendY = canvas.height - 22;
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.font = "12px Arial";
+
+    ctx.strokeStyle = "#8b5a2b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(25, legendY);
+    ctx.lineTo(43, legendY);
+    ctx.stroke();
+
+    ctx.fillStyle = "#202b26";
+    ctx.fillText("Door", 49, legendY);
+
+    ctx.strokeStyle = "#168aad";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(110, legendY - 3);
+    ctx.lineTo(130, legendY - 3);
+    ctx.moveTo(110, legendY + 3);
+    ctx.lineTo(130, legendY + 3);
+    ctx.stroke();
+
+    ctx.fillStyle = "#202b26";
+    ctx.fillText("Window", 137, legendY);
+
     status.textContent = exceedsPlot
-        ? "Warning: the selected room dimensions exceed the available plot layout. Reduce room sizes or revise the plot dimensions. This is a rough packing check, not a building-code validation."
-        : "Rooms are drawn to relative dimensions. This conceptual arrangement does not yet account for walls, gaps, circulation, setbacks, or building regulations.";
+        ? "Warning: room dimensions exceed the available plot layout. Reduce room sizes or revise the plot dimensions. This is a rough packing check, not building-code validation."
+        : "Door and window symbols are illustrative. This conceptual layout does not account for actual wall thickness, circulation, setbacks, or building regulations.";
 }
 
+// --------------------------------------------------
+// 4. Submit form and display cost estimate
+// --------------------------------------------------
 
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -267,11 +538,21 @@ form.addEventListener("submit", async (event) => {
     submitButton.textContent = "Calculating...";
 
     const houseData = {
-        plot_length: Number(document.getElementById("plot_length").value),
-        plot_width: Number(document.getElementById("plot_width").value),
-        floors: Number(document.getElementById("floors").value),
-        bedrooms: Number(document.getElementById("bedrooms").value),
-        bathrooms: Number(document.getElementById("bathrooms").value),
+        plot_length: Number(
+            document.getElementById("plot_length").value
+        ),
+        plot_width: Number(
+            document.getElementById("plot_width").value
+        ),
+        floors: Number(
+            document.getElementById("floors").value
+        ),
+        bedrooms: Number(
+            document.getElementById("bedrooms").value
+        ),
+        bathrooms: Number(
+            document.getElementById("bathrooms").value
+        ),
         tier: document.getElementById("tier").value
     };
 
@@ -298,9 +579,12 @@ form.addEventListener("submit", async (event) => {
         const cost = data.cost_estimate;
 
         if (!cost) {
-            throw new Error("Cost estimate is missing from the backend response.");
+            throw new Error(
+                "Cost estimate is missing from the backend response."
+            );
         }
 
+        // House information.
         document.getElementById("plotArea").textContent =
             `${data.plot_area_sqft.toLocaleString()} sq ft`;
 
@@ -319,12 +603,11 @@ form.addEventListener("submit", async (event) => {
         document.getElementById("tierResult").textContent =
             data.tier;
 
-        const priceInfo = data.cost_estimate;
-
+        // Cost information.
         document.getElementById("costMessage").textContent =
-            `${priceInfo.tier} tier · ${priceInfo.location} · ` +
-            `Rate data date: ${priceInfo.last_updated} · ` +
-            `Status: ${priceInfo.price_status.replaceAll("_", " ")}.`;
+            `${cost.tier} tier · ${cost.location} · ` +
+            `Rate data date: ${cost.last_updated} · ` +
+            `Status: ${String(cost.price_status).replaceAll("_", " ")}.`;
 
         const formatINR = (amount) =>
             new Intl.NumberFormat("en-IN", {
@@ -345,7 +628,10 @@ form.addEventListener("submit", async (event) => {
         document.getElementById("costDisclaimer").textContent =
             cost.disclaimer;
 
-        const breakdownBody = document.getElementById("costBreakdown");
+        // Material cost breakdown.
+        const breakdownBody =
+            document.getElementById("costBreakdown");
+
         breakdownBody.replaceChildren();
 
         cost.breakdown.forEach((item) => {
@@ -367,22 +653,26 @@ form.addEventListener("submit", async (event) => {
             breakdownBody.appendChild(row);
         });
 
+        // Collect room settings once and draw the floor plan.
+        const rooms = getRoomDimensions();
+
+        console.table(rooms);
 
         emptyState.hidden = true;
         result.hidden = false;
 
-        console.log("Rooms sent to floor plan:", getRoomDimensions());
-        
         drawFloorPlan({
             plot_length: houseData.plot_length,
             plot_width: houseData.plot_width,
-            rooms: getRoomDimensions()
+            rooms: rooms
         });
 
-
     } catch (error) {
+        console.error("SmartNest error:", error);
+
         statusMessage.textContent =
-            "Could not connect to SmartNest. Make sure your Flask backend is running. " +
+            "Could not complete the estimate. Make sure your Flask " +
+            "backend is running and check the error: " +
             error.message;
     } finally {
         submitButton.disabled = false;
@@ -390,12 +680,19 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
-document.getElementById("downloadPlanButton").addEventListener("click", () => {
-    const canvas = document.getElementById("floorPlanCanvas");
-    const link = document.createElement("a");
+// --------------------------------------------------
+// 5. Download floor plan as PNG
+// --------------------------------------------------
 
-    link.download = "smartnest-floor-plan.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-});
+document
+    .getElementById("downloadPlanButton")
+    .addEventListener("click", () => {
+        const canvas =
+            document.getElementById("floorPlanCanvas");
 
+        const link = document.createElement("a");
+
+        link.download = "smartnest-floor-plan.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    });
